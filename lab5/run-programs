@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+# store present working directory to execute c++ programs
+# after getting sysfs info
+currDirectory=$(pwd)
+frequencies=()
+
+echo -e "\nAccessing sysfs info:"
+cd /sys/devices/system/cpu/cpu0/cpufreq/
+echo -e "\nCPU max frequency:"
+frequencies+=($(cat cpuinfo_max_freq))
+echo "${frequencies[0]}"
+
+echo -e "\nCPU min frequency:"
+frequencies+=($(cat cpuinfo_min_freq))
+echo "${frequencies[1]}"
+
+cd $currDirectory
+# run workload program using different governors
+governors=("performance" "powersave" "ondemand")
+echo -e "\nSelecting governors"
+
+for gov in ${governors[*]}
+do
+	g++ -Werror change_gov.cpp
+	sudo ./a.out $gov
+ 
+	g++ -Werror lab5_pt1.cpp
+	echo -e "\nRunning workload..."
+	sudo ./a.out 0 
+done
+
+# run workload under different frequencies
+for freq in ${frequencies[*]}
+do
+	echo -e "\nLocking frequency to $freq"
+	g++ -Werror change_freq.cpp
+	sudo ./a.out $freq
+
+	echo -e "\nRunning workload..."
+	g++ -Werror lab5_pt1.cpp
+	sudo ./a.out 1
+done
+
+# open another window to run workload program
+echo -e "\nOpening new window to run workload" 
+lxterminal --command=./run-load
+
+# run custom userspace governor program
+echo -e "\nRunning userspace CPU Governor..."
+g++ -Werror "$currDirectory"/lab5_pt2.cpp
+sudo ./a.out
+
+

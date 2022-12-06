@@ -1,9 +1,9 @@
 #include <iostream>
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <thread>
 #include <chrono>
+#include "functions.h"
 
 using namespace std;
 
@@ -11,57 +11,9 @@ const int MIN_FREQ =  600000;
 const int MAX_FREQ = 1800000;
 const int SCALING_FACTOR =  100000;
 
-int getFrequency() {
-	int frequency;
-	ifstream cpuinfo_cur_freq;
-	cpuinfo_cur_freq.open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq");
-
-	cpuinfo_cur_freq >> frequency;
-	cpuinfo_cur_freq.close();
-	
-	return frequency;
-}
-
-
-void setFrequency(int frequency) {
-	ofstream scaling_setspeed;
-	scaling_setspeed.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed",ios::trunc);
-
-	scaling_setspeed << frequency;
-	scaling_setspeed.close();
-	
-	std::cout << "Set Frequency:  " << frequency  << std::endl;
-}
-
-
-std::string readProcStat(int line) {
-	std::string firstLine = "";
-	ifstream stat;
-	stat.open("/proc/stat");
-
-	for(int i = 0; i < line + 1; i++)
-		std::getline(stat, firstLine);
-	
-	stat.close();
-	
-	return firstLine;
-}
-
 int main() {
+	setGovernor("userspace");
 
-	ofstream scaling_governor;
-	scaling_governor.open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor",ios::trunc);
-
-	if(scaling_governor.is_open()) {
-		scaling_governor << "userspace\n";
-		scaling_governor.close();
-	}
-
-	else
-		std::cout << "Probably need to run as sudo." << std::endl;
-
-	std::cout << "Current Governor: " << "userspace" << std::endl; 
-	
 	long double currUtilization[5] = {0,0,0,0};
 	long int currTimeUsage[5] = {0,0,0,0,0};
 	long int currentFreq = getFrequency();
@@ -145,12 +97,11 @@ int main() {
 				
 			}
 
-			std::cout << "Max Utilization: " << maxUtilization * 100 << "%" << std::endl;
-			std::cout << "Desired Frequency: " << desiredFreq / 1000000 << "MHz" << std::endl;
-			std::cout << "Current Frequency: " << currentFreq / 1000000 << "MHz" << std::endl;
-			
 			setFrequency(nextFreq);
-					
+			std::cout << "Max Util: " << int(maxUtilization * 100) << " %" << "\t\t\t " << " Desired Freq: " 
+				<< float(desiredFreq) / 1000000 << " MHz" << "\t\t\t " << "Current Freq: " 
+				<< float(currentFreq) / 1000000 << " MHz" << "\t\t\t " << " %\r"; 
+			std::cout.flush();
 		}		
 		
 		currentFreq = getFrequency();

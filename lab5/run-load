@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+echo -e "\nRunning workloads."
+
+for i in 1 2 3 4  
+do
+	g++ lab5_pt1.cpp
+	sudo ./a.out 1
+done
+echo -e "\nDone\nExiting"
